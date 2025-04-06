@@ -220,6 +220,9 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
 .history-item {

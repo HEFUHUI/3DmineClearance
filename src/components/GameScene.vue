@@ -3,11 +3,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue';
+import { ref, onMounted, onBeforeUnmount, watch, defineEmits } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useGameStore } from '../stores/game';
 
+const emit = defineEmits(['loading-progress']);
 const container = ref(null);
 const gameStore = useGameStore();
 
@@ -46,25 +47,39 @@ const materials = {
     })
 };
 
-// 创建环境贴图
-const cubeTextureLoader = new THREE.CubeTextureLoader();
-const envMap = cubeTextureLoader.load([
-    'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
-    'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
-]);
-
-// 应用环境贴图到所有材质
-Object.values(materials).forEach(material => {
-    material.envMap = envMap;
-});
+// 环境贴图将在initScene中通过加载管理器加载
 
 // 初始化场景
 function initScene() {
     const { width, height } = gameStore.config;
+    
+    // 创建加载管理器
+    const loadingManager = new THREE.LoadingManager();
+    let totalItems = 0;
+    let loadedItems = 0;
+    
+    // 设置加载事件
+    loadingManager.onStart = (url, itemsLoaded, itemsTotal) => {
+        totalItems = itemsTotal;
+        emit('loading-progress', 0);
+    };
+    
+    loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+        loadedItems = itemsLoaded;
+        const progress = Math.min((itemsLoaded / itemsTotal) * 100, 95); // 保留5%用于场景初始化
+        emit('loading-progress', progress);
+    };
+    
+    loadingManager.onLoad = () => {
+        // 模拟场景初始化的额外时间
+        setTimeout(() => {
+            emit('loading-progress', 100);
+        }, 300);
+    };
+    
+    loadingManager.onError = (url) => {
+        console.error('加载资源出错:', url);
+    };
 
     // 创建场景
     scene = new THREE.Scene();
@@ -123,6 +138,22 @@ function initScene() {
     
     // 添加雾效果
     scene.fog = new THREE.FogExp2(0x000000, 0.02);
+
+    // 使用加载管理器创建纹理加载器
+    const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager);
+    const envMap = cubeTextureLoader.load([
+        'https://threejs.org/examples/textures/cube/Bridge2/posx.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negx.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/posy.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negy.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/posz.jpg',
+        'https://threejs.org/examples/textures/cube/Bridge2/negz.jpg'
+    ]);
+    
+    // 应用环境贴图到所有材质
+    Object.values(materials).forEach(material => {
+        material.envMap = envMap;
+    });
 
     // 创建棋盘
     createBoard();

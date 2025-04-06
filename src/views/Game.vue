@@ -18,7 +18,7 @@
     </div>
 
     <div class="game-board">
-      <GameScene />
+      <GameScene @loading-progress="updateLoadingProgress" />
     </div>
 
     <div v-if="gameStore.gameState === 'won' || gameStore.gameState === 'lost'"
@@ -32,6 +32,17 @@
         </div>
       </div>
     </div>
+
+    <!-- 加载进度条 -->
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-container">
+        <h3>游戏加载中...</h3>
+        <div class="progress-bar-container">
+          <div class="progress-bar" :style="{ width: `${loadingProgress}%` }"></div>
+        </div>
+        <div class="progress-text">{{ Math.floor(loadingProgress) }}%</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -39,11 +50,28 @@
 import { useRouter } from 'vue-router';
 import { useGameStore } from '../stores/game';
 import GameScene from '../components/GameScene.vue';
+import { ref } from 'vue';
 
 const router = useRouter();
 const gameStore = useGameStore();
 
+// 加载状态管理
+const isLoading = ref(true);
+const loadingProgress = ref(0);
+
+const updateLoadingProgress = (progress) => {
+  loadingProgress.value = progress;
+  if (progress >= 100) {
+    // 添加短暂延迟，确保进度条动画完成
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 300);
+  }
+};
+
 const restartGame = () => {
+  isLoading.value = true;
+  loadingProgress.value = 0;
   gameStore.initializeGame(gameStore.config);
 };
 
@@ -60,6 +88,7 @@ const backToHome = () => {
   flex-direction: column;
   background: #f0f0f0;
   box-sizing: border-box;
+  position: relative;
 }
 
 .game-header {
@@ -76,6 +105,69 @@ const backToHome = () => {
   align-items: center;
   box-sizing: border-box;
   border-radius: 16px;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.loading-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 2rem;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 400px;
+  width: 90%;
+}
+
+.loading-container h3 {
+  color: white;
+  margin: 0 0 1.5rem 0;
+  text-shadow: 0 0 10px rgba(51, 102, 255, 0.8);
+  background: linear-gradient(to right, #3366ff, #ff6633);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-size: 1.5rem;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) inset;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #3366ff, #ff6633);
+  border-radius: 5px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(51, 102, 255, 0.5);
+}
+
+.progress-text {
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 

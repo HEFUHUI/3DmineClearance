@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useGameStore } from '../stores/game';
 
 const gameStore = useGameStore();
@@ -114,17 +114,28 @@ const themes = [
   { name: 'light', label: '明亮', colors: { primary: '#42b983' } }
 ];
 
-const currentTheme = ref('classic');
+// 从localStorage加载主题设置
+const currentTheme = ref(localStorage.getItem('minesweeper-theme') || 'classic');
 
 const setTheme = (themeName) => {
   currentTheme.value = themeName;
-  // 这里可以添加主题切换的具体实现
+  // 保存主题设置到localStorage
+  localStorage.setItem('minesweeper-theme', themeName);
 };
 
-// 其他设置
+// 从localStorage加载其他设置
 const settings = ref({
-  soundEnabled: true,
-  showTutorial: true
+  soundEnabled: JSON.parse(localStorage.getItem('minesweeper-sound-enabled') || 'true'),
+  showTutorial: JSON.parse(localStorage.getItem('minesweeper-show-tutorial') || 'true')
+});
+
+// 监听设置变化并保存
+watch(() => settings.value.soundEnabled, (newValue) => {
+  localStorage.setItem('minesweeper-sound-enabled', JSON.stringify(newValue));
+});
+
+watch(() => settings.value.showTutorial, (newValue) => {
+  localStorage.setItem('minesweeper-show-tutorial', JSON.stringify(newValue));
 });
 </script>
 
