@@ -8,7 +8,8 @@ export default defineConfig({
   },
   base: process.env.NODE_ENV === 'production' ? './' : '/',
   build: {
-    target: 'esnext',
-    outDir: 'dist'
+    // target: 'esnext',
+    emptyOutDir: true,
+    outDir: 'dist',
   }
 })
